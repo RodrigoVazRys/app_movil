@@ -12,10 +12,12 @@ abstract class AuthRepository {
   });
 
   /// Registra un nuevo usuario (requiere admin_secret_token).
-  Future<UserEntity> register({
+  Future<bool> register({
     required String username,
     required String email,
     required String password,
     required String adminSecretToken,
   });
+
+  Future<UserEntity> verifyEmail({required String code});
 }

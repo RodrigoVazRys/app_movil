@@ -60,10 +60,13 @@ class KazeHttpClient {
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> body,
-      {String? authToken}) async {
+      {String? authToken, Map<String, String>? extraHeaders}) async {
+    final headers = _buildHeaders(authToken: authToken);
+    if (extraHeaders != null) headers.addAll(extraHeaders);
+
     final response = await _client.post(
       _buildUri(endpoint),
-      headers: _buildHeaders(authToken: authToken),
+      headers: headers,
       body: jsonEncode(body),
     );
     _validateResponse(response);

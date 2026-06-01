@@ -7,6 +7,7 @@ class ApiConstants {
   static const String baseUrl = 'https://api.kaze.com.mx';
   static const String login    = '/login';
   static const String register = '/register';
+  static const String verify   = '/verify';
   static const String media       = '/media/';
   static const String mediaUpload = '/media/upload/';
 

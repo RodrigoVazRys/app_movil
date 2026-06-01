@@ -19,16 +19,13 @@ class _RegisterViewState extends State<RegisterView> {
   final _userCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passCtrl     = TextEditingController();
-  final _tokenCtrl    = TextEditingController();
   bool  _obscurePass  = true;
-  bool  _obscureToken = true;
 
   @override
   void dispose() {
     _userCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
-    _tokenCtrl.dispose();
     super.dispose();
   }
 
@@ -39,18 +36,74 @@ class _RegisterViewState extends State<RegisterView> {
       username:         _userCtrl.text.trim(),
       email:            _emailCtrl.text.trim(),
       password:         _passCtrl.text,
-      adminSecretToken: _tokenCtrl.text.trim(),
+      adminSecretToken: 'NKCyFzsvm70Zno5fQvxNu-DzVwBSvvinyPrqpGnEm_M',
     );
 
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Usuario creado. Inicia sesión.'),
-        ),
-      );
-      Navigator.of(context).pop(); // vuelve a login
+      _showVerificationDialog(vm);
     }
+  }
+
+  void _showVerificationDialog(AuthViewModel vm) {
+    final codeCtrl = TextEditingController();
+    bool isVerifying = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF16162C),
+            title: const Text('Verifica tu correo', style: TextStyle(color: KazeTheme.neonCyan)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Ingresa el código de 6 dígitos que enviamos a tu email.', style: TextStyle(color: Colors.white70)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: codeCtrl,
+                  decoration: const InputDecoration(labelText: 'Código (ej. AB123C)', prefixIcon: Icon(Icons.security_rounded)),
+                  textCapitalization: TextCapitalization.characters,
+                ),
+                if (vm.status == AuthStatus.error && vm.errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(vm.errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isVerifying ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+              ),
+              ElevatedButton(
+                onPressed: isVerifying ? null : () async {
+                  setState(() => isVerifying = true);
+                  final success = await vm.verifyEmail(codeCtrl.text.trim());
+                  if (success) {
+                    if (ctx.mounted) Navigator.of(ctx).pop();
+                    if (mounted) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        const SnackBar(content: Text('✅ Cuenta creada. Ya puedes iniciar sesión.')),
+                      );
+                      Navigator.of(this.context).pop(); // vuelve a login
+                    }
+                  } else {
+                    setState(() => isVerifying = false);
+                  }
+                },
+                child: isVerifying 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                  : const Text('Verificar'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
   }
 
   @override
@@ -137,37 +190,6 @@ class _RegisterViewState extends State<RegisterView> {
                             validator: (v) => (v == null || v.length < 6)
                                 ? 'Mínimo 6 caracteres'
                                 : null,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Sección: Token de administrador
-                          _sectionLabel('Autorización de Admin'),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Se requiere el token secreto para crear cuentas.',
-                            style: TextStyle(
-                                color: Color(0xFF6B6B8A), fontSize: 12),
-                          ),
-                          const SizedBox(height: 12),
-
-                          TextFormField(
-                            controller: _tokenCtrl,
-                            obscureText: _obscureToken,
-                            decoration: InputDecoration(
-                              labelText: 'Admin Secret Token',
-                              prefixIcon: const Icon(Icons.key_rounded),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscureToken
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined),
-                                onPressed: () => setState(
-                                    () => _obscureToken = !_obscureToken),
-                              ),
-                            ),
-                            validator: (v) =>
-                                (v == null || v.isEmpty)
-                                    ? 'El token es requerido'
-                                    : null,
                           ),
                           const SizedBox(height: 28),
                           vm.status == AuthStatus.loading

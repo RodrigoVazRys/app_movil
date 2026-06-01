@@ -1,20 +1,3 @@
-// main.dart
-// Punto de entrada — Inyección de Dependencias MANUAL +
-// MultiProvider. Cero get_it, cero inyectables.
-//
-// Árbol de dependencias (de abajo hacia arriba):
-//   http.Client
-//     └─ KazeHttpClient
-//          ├─ AuthRemoteDataSourceImpl
-//          │    └─ AuthRepositoryImpl
-//          │         └─ AuthViewModel  ← token en memoria
-//          └─ MediaRemoteDataSourceImpl
-//               └─ MediaRepositoryImpl (requiere token del AuthViewModel)
-//                    └─ MediaViewModel
-//
-// NOTA: MediaRepositoryImpl se reconstruye cuando el token cambia
-//       (ProxyProvider escucha los cambios de AuthViewModel).
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -62,8 +45,6 @@ void main() {
         ChangeNotifierProvider<AuthViewModel>(
           create: (_) => AuthViewModel(repository: authRepository),
         ),
-        // ProxyProvider escucha AuthViewModel y provee un nuevo
-        // MediaViewModel con el token actualizado.
         ChangeNotifierProxyProvider<AuthViewModel, MediaViewModel>(
           create: (ctx) {
             // Estado inicial (sin token — usuario no autenticado)

@@ -51,13 +51,30 @@ class AuthViewModel extends ChangeNotifier {
   }) async {
     _setLoading();
     try {
-      _currentUser = await _repository.register(
+      await _repository.register(
         username:         username,
         email:            email,
         password:         password,
         adminSecretToken: adminSecretToken,
       );
-      _status = AuthStatus.unauthenticated; // debe hacer login después
+      _status = AuthStatus.unauthenticated;
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } on AppException catch (e) {
+      _setError(e.message);
+      return false;
+    } catch (e) {
+      _setError('Error inesperado: $e');
+      return false;
+    }
+  }
+
+  Future<bool> verifyEmail(String code) async {
+    _setLoading();
+    try {
+      _currentUser = await _repository.verifyEmail(code: code);
+      _status = AuthStatus.unauthenticated; // Need to login anyway
       _errorMessage = null;
       notifyListeners();
       return true;

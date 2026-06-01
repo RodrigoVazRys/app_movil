@@ -9,7 +9,8 @@ import 'package:kaze_studio_cms/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<String> login(LoginRequestModel request);
-  Future<UserModel> register(RegisterRequestModel request);
+  Future<bool> register(RegisterRequestModel request);
+  Future<UserModel> verifyEmail(String code);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -38,8 +39,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> register(RegisterRequestModel request) async {
-    final data = await _httpClient.post(ApiConstants.register, request.toJson());
-    return UserModel.fromJson(data as Map<String, dynamic>);
+  Future<bool> register(RegisterRequestModel request) async {
+    final body = request.toJson();
+    final adminToken = body.remove('admin_secret_token') as String;
+    
+    await _httpClient.post(
+      ApiConstants.register, 
+      body,
+      extraHeaders: {
+        'X-Admin-Token': adminToken,
+      },
+    );
+    return true;
+  }
+
+  @override
+  Future<UserModel> verifyEmail(String code) async {
+    final data = await _httpClient.post(ApiConstants.verify, {'code': code});
+    return UserModel.fromJson(data['user'] as Map<String, dynamic>);
   }
 }
