@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Kaze Studio (Chrome Web)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--web-port=4321"
+            ]
+        },
+        {
+            "name": "Kaze Studio (Edge Web)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "edge",
+                "--web-port=4321"
+            ]
+        }
+    ]
+}

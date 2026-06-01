@@ -1,30 +1,39 @@
 // This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// To run this test: flutter test
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
-import 'package:app/main.dart';
+import 'package:kaze_studio_cms/app.dart';
+import 'package:kaze_studio_cms/core/network/http_client.dart';
+import 'package:kaze_studio_cms/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:kaze_studio_cms/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:kaze_studio_cms/features/auth/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:kaze_studio_cms/features/music_manager/data/datasources/media_remote_datasource.dart';
+import 'package:kaze_studio_cms/features/music_manager/data/repositories/media_repository_impl.dart';
+import 'package:kaze_studio_cms/features/music_manager/presentation/viewmodels/media_viewmodel.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('KazeApp smoke test — shows login screen', (tester) async {
+    final kazeHttp       = KazeHttpClient();
+    final authDs         = AuthRemoteDataSourceImpl(httpClient: kazeHttp);
+    final authRepo       = AuthRepositoryImpl(dataSource: authDs);
+    final authVm         = AuthViewModel(repository: authRepo);
+    final mediaDs        = MediaRemoteDataSourceImpl(httpClient: kazeHttp);
+    final mediaRepo      = MediaRepositoryImpl(dataSource: mediaDs, token: '');
+    final mediaVm        = MediaViewModel(repository: mediaRepo);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthViewModel>.value(value: authVm),
+          ChangeNotifierProvider<MediaViewModel>.value(value: mediaVm),
+        ],
+        child: const KazeApp(),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // La pantalla inicial debe ser login
+    expect(find.text('KAZE STUDIO'), findsOneWidget);
   });
 }
