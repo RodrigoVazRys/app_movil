@@ -1,14 +1,22 @@
-// app.dart
-// MaterialApp raíz — rutas nombradas, tema y navegación 1.0.
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:device_preview/device_preview.dart';
+
+// Core — Theme (única fuente de colores)
 import 'package:kaze_studio_cms/core/theme/kaze_theme.dart';
+
+// Feature: Auth — solo vistas y ViewModel (sin repositorios ni datasources)
 import 'package:kaze_studio_cms/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:kaze_studio_cms/features/auth/presentation/views/login_view.dart';
 import 'package:kaze_studio_cms/features/auth/presentation/views/register_view.dart';
+
+// Feature: Music Manager — solo vistas
 import 'package:kaze_studio_cms/features/music_manager/presentation/views/media_list_view.dart';
+
+// Feature: Projects — solo vistas
 import 'package:kaze_studio_cms/features/projects/presentation/views/projects_list_view.dart';
+
+// Feature: Tech Stack — solo vistas
 import 'package:kaze_studio_cms/features/tech_stack/presentation/views/tech_list_view.dart';
 
 class KazeApp extends StatelessWidget {
@@ -17,6 +25,8 @@ class KazeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       title: 'KAZE Studio',
       debugShowCheckedModeBanner: false,
       theme: KazeTheme.dark,
@@ -25,19 +35,10 @@ class KazeApp extends StatelessWidget {
       routes: {
         LoginView.routeName:    (_) => const LoginView(),
         RegisterView.routeName: (_) => const RegisterView(),
-        '/home': (ctx) => _guardedRoute(ctx, child: const _HomeShell()),
-        MediaListView.routeName: (ctx) => _guardedRoute(
-              ctx,
-              child: const MediaListView(),
-            ),
-        ProjectsListView.routeName: (ctx) => _guardedRoute(
-              ctx,
-              child: const ProjectsListView(),
-            ),
-        TechListView.routeName: (ctx) => _guardedRoute(
-              ctx,
-              child: const TechListView(),
-            ),
+        '/home': (_) => const _HomeShell(),
+        MediaListView.routeName:    (ctx) => _guardedRoute(ctx, child: const MediaListView()),
+        ProjectsListView.routeName: (ctx) => _guardedRoute(ctx, child: const ProjectsListView()),
+        TechListView.routeName:     (ctx) => _guardedRoute(ctx, child: const TechListView()),
       },
       onUnknownRoute: (settings) => MaterialPageRoute(
         builder: (_) => const _NotFoundView(),
@@ -57,7 +58,8 @@ class KazeApp extends StatelessWidget {
     return child;
   }
 }
-// Shell principal con NavigationRail (Desktop) o BottomNav (Mobile)
+
+// ─── Shell principal: NavigationRail (≥720 px) / BottomNavigationBar (móvil) ─
 class _HomeShell extends StatefulWidget {
   const _HomeShell();
 
@@ -94,57 +96,56 @@ class _HomeShellState extends State<_HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final authVm  = context.read<AuthViewModel>();
-    final isWide  = MediaQuery.of(context).size.width >= 720;
+    final cs     = Theme.of(context).colorScheme;
+    final authVm = context.read<AuthViewModel>();
+    final isWide = MediaQuery.of(context).size.width >= 720;
 
     return Scaffold(
       body: Row(
         children: [
           if (isWide)
             NavigationRail(
-              extended:          isWide,
-              selectedIndex:     _selectedIndex,
-              onDestinationSelected: (i) =>
-                  setState(() => _selectedIndex = i),
-              destinations:      _destinations,
-              backgroundColor:   const Color(0xFF0E0E1C),
-              indicatorColor:
-                  const Color(0xFF9C27B0).withValues(alpha: 0.25),
-              selectedIconTheme: const IconThemeData(
-                  color: Color(0xFF00E5FF)),
-              unselectedIconTheme: const IconThemeData(
-                  color: Color(0xFF5C5C7A)),
-              selectedLabelTextStyle: const TextStyle(
-                  color: Color(0xFF00E5FF), fontWeight: FontWeight.bold),
-              unselectedLabelTextStyle: const TextStyle(
-                  color: Color(0xFF5C5C7A)),
+              extended: true,
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+              destinations: _destinations,
+              backgroundColor: cs.surface,
+              indicatorColor: cs.primary.withValues(alpha: 0.25),
+              selectedIconTheme: IconThemeData(color: cs.secondary),
+              unselectedIconTheme: IconThemeData(
+                  color: cs.onSurface.withValues(alpha: 0.4)),
+              selectedLabelTextStyle: TextStyle(
+                color: cs.secondary,
+                fontWeight: FontWeight.bold,
+              ),
+              unselectedLabelTextStyle: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.4),
+              ),
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
                   children: [
-                    // Logo KAZE
                     Container(
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF9C27B0)
-                            .withValues(alpha: 0.15),
-                        border: Border.all(
-                            color: const Color(0xFF00E5FF), width: 1.5),
+                        color: cs.primary.withValues(alpha: 0.15),
+                        border: Border.all(color: cs.secondary, width: 1.5),
                       ),
-                      child: const Icon(Icons.music_note_rounded,
-                          color: Color(0xFF00E5FF), size: 20),
+                      child: Icon(Icons.music_note_rounded,
+                          color: cs.secondary, size: 20),
                     ),
-                    if (isWide) ...[
-                      const SizedBox(height: 8),
-                      const Text('KAZE',
-                          style: TextStyle(
-                              color: Color(0xFF00E5FF),
-                              fontSize: 10,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.bold)),
-                    ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'KAZE',
+                      style: TextStyle(
+                        color: cs.secondary,
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -152,7 +153,7 @@ class _HomeShellState extends State<_HomeShell> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: IconButton(
                   icon: const Icon(Icons.logout_rounded),
-                  color: const Color(0xFF5C5C7A),
+                  color: cs.onSurface.withValues(alpha: 0.5),
                   tooltip: 'Cerrar sesión',
                   onPressed: () {
                     authVm.logout();
@@ -171,9 +172,8 @@ class _HomeShellState extends State<_HomeShell> {
               selectedIndex: _selectedIndex,
               onDestinationSelected: (i) =>
                   setState(() => _selectedIndex = i),
-              backgroundColor: const Color(0xFF0E0E1C),
-              indicatorColor:
-                  const Color(0xFF9C27B0).withValues(alpha: 0.25),
+              backgroundColor: cs.surface,
+              indicatorColor: cs.primary.withValues(alpha: 0.25),
               destinations: const [
                 NavigationDestination(
                   icon: Icon(Icons.library_music_outlined),
@@ -195,54 +195,27 @@ class _HomeShellState extends State<_HomeShell> {
     );
   }
 }
-// Placeholder para features no implementados aún
-class _PlaceholderPage extends StatelessWidget {
-  final IconData icon;
-  final String   label;
-  const _PlaceholderPage({required this.icon, required this.label});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 72,
-                color: const Color(0xFF9C27B0).withValues(alpha: 0.4)),
-            const SizedBox(height: 16),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('Módulo en construcción',
-                style: TextStyle(color: Color(0xFF6B6B8A))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-// Vista 404
 class _NotFoundView extends StatelessWidget {
   const _NotFoundView();
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.broken_image_outlined,
-                size: 80, color: Color(0xFF3A3A5C)),
+            Icon(Icons.broken_image_outlined,
+                size: 80, color: cs.onSurface.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
             const Text('404 — Página no encontrada',
                 style: TextStyle(fontSize: 18)),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pushReplacementNamed('/login'),
+              onPressed: () => Navigator.of(context)
+                  .pushReplacementNamed(LoginView.routeName),
               child: const Text('Volver al inicio'),
             ),
           ],
